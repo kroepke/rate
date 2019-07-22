@@ -28,6 +28,14 @@ fn file_validator(path: String) -> Result<(), String> {
     }
 }
 
+fn get_reader<P: AsRef<Path>>(path: P) -> Box<io::BufRead> {
+    if path.as_ref() == Path::new("-") {
+        Box::new(BufReader::new(io::stdin()))
+    } else {
+        Box::new(BufReader::new(File::open(path).unwrap()))
+    }
+}
+
 fn main() {
     let matches = App::new(crate_name!())
         .about("Reads input from stdin and calculates the rate of lines or values seen over time")
@@ -66,11 +74,7 @@ fn main() {
     match matches.subcommand() {
         ("lines", Some(matches)) => {
             let path = Path::new(matches.value_of("file").unwrap());
-            let mut reader: Box<BufRead> = if path == Path::new("-") {
-                Box::new(BufReader::new(io::stdin()))
-            } else {
-                Box::new(BufReader::new(File::open(path).unwrap()))
-            };
+            let mut reader: Box<BufRead> = get_reader(path);
             let mut buffer = String::new();
             let mut first_seen: Option<Instant> = None;
             let mut last_seen: Option<Instant> = None;
